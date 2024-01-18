@@ -34,7 +34,6 @@ const getSystemProperty = async () => {
       var isSucceeded = inResponse.returnValue;
 
       if (isSucceeded) {
-        console.log("connectionStatus getSystemProperty: ", inResponse);
         // To-Do something
         return inResponse;
       } else {
@@ -55,11 +54,11 @@ const getUid = async () => {
       parameters: { idType: ["LGUDID"] },
       onSuccess: function (result) {
         uid = result.idList[0].idValue;
-        resolve("scuccess");
+        resolve("success");
       },
       onFailure: function (error) {
         console.log("Failed to get UID:", error);
-        reject(error);
+        resolve('Failed');
       },
     });
   });
@@ -67,23 +66,27 @@ const getUid = async () => {
 };
 
 const getSystemTime = async () => {
-  await window.webOS.service.request(API_WEBOS.SYSTEM_TIME.base, {
-    method: API_WEBOS.SYSTEM_TIME.methods.getSystemTime,
-    parameters: { subscribe: false },
-    onComplete: function (inResponse) {
-      var isSucceeded = inResponse.returnValue;
-
-      if (isSucceeded) {
-        console.log("connectionStatus getSystemTime: ", inResponse);
-        // To-Do something
-        return inResponse;
-      } else {
-        console.log("Failed to get TV device information");
-        // To-Do something
-        return undefined;
-      }
-    },
-  });
+  let systemTime: any = null
+  new Promise((resolve, reject) => {
+    window.webOS.service.request(API_WEBOS.SYSTEM_TIME.base, {
+      method: API_WEBOS.SYSTEM_TIME.methods.getSystemTime,
+      parameters: { subscribe: false },
+      onComplete: function (inResponse) {
+        var isSucceeded = inResponse.returnValue;
+  
+        if (isSucceeded) {
+          // To-Do something
+          systemTime = inResponse;
+          resolve("success");
+        } else {
+          console.log("Failed to get TV device information");
+          // To-Do something
+          resolve("Failed")
+        }
+      },
+    });
+  })
+  return systemTime
 };
 
 const getSystemSettings = async () => {
@@ -142,7 +145,6 @@ const getSystemSettings = async () => {
       },
     });
   });
-  console.log("🚀 ~ getSystemSettings ~ data:", data);
 
   return data;
 };
@@ -154,12 +156,10 @@ const getConnectionStatus = async () => {
       method: API_WEBOS.CONNECTION_MANAGER.methods.getStatus,
       parameters: { subscribe: true },
       onComplete: function (inResponse) {
-        console.log("🚀 ~ getConnectionStatus ~ inResponse:", inResponse);
 
         var isSucceeded = inResponse.returnValue;
 
         if (isSucceeded) {
-          console.log("connectionStatus getConnectionStatus: ", inResponse);
           // To-Do something
           connectionStatus = mapDataConnectionStatus(inResponse);
           eventEmitterNative.emit(
@@ -209,15 +209,12 @@ export const addEventCursorStateChange = (callback: (data: any) => void) => {
     }
   });
   document.addEventListener("cursorStateChange", (e: any) => {
-    console.log("🚀 ~ UtilNative ~ document.cursorStateChange ~ e:", e, callback);
     callback({ isCursorShow: e.detail.visibility });
   });
   document.addEventListener("focus", (e) => {
-    console.log("🚀 ~ UtilNative ~ document.focus ~ e:", e);
     callback({ isCursorShow: true });
   });
   document.addEventListener("blur", (e) => {
-    console.log("🚀 ~ UtilNative ~ document.blur ~ e:", e);
     callback({ isCursorShow: true });
   });
 };
@@ -227,20 +224,19 @@ export const offEventCursorStateChange = (callback: (data: any) => void) => {
   document.removeEventListener("focus", callback);
   document.removeEventListener("cursorStateChange", callback);
 }
+export const addEventKeyBoardStateChange = (callback: (data: any) => void) => {
+  document.addEventListener("keyboardStateChange", (e: any) => {
+    callback({ isKeyboardShow: e.detail.visibility });
+  });
+}
 
 const getCommonPlatformData = async () => {
   const connectionStatus: ConnectionT = await CommonWebOS.getConnectionStatus();
-  console.log(
-    "🚀 ~ getCommonPlatformData ~ connectionStatus:",
-    connectionStatus
-  );
 
   const deviceInfo: any = await CommonWebOS.getDeviceInfo();
-  console.log("🚀 ~ getCommonPlatformData ~ deviceInfo:", deviceInfo);
 
   const appId = CommonWebOS.fetchAppId();
   const systemInfo = CommonWebOS.getSystemInfo();
-  console.log("🚀 ~ getCommonPlatformData ~ systemInfo:", systemInfo);
 
   const uid = await CommonWebOS.getUid();
 
@@ -261,13 +257,6 @@ const getCommonPlatformData = async () => {
     version: deviceInfo.version,
     uid,
   };
-  console.log("🚀 ~ getCommonPlatformData ~ rawDeviceInfo:", rawDeviceInfo);
-
-  // connection status
-  // const connection: any = {
-  //   displayName: curConnection.,
-  //   ipAddress
-  // }
 
   // screen info
   const screen: ScreenT = {
@@ -298,6 +287,7 @@ const CommonWebOS = {
   getCommonPlatformData,
   getUid,
   addEventCursorStateChange,
-  offEventCursorStateChange
+  offEventCursorStateChange,
+  addEventKeyBoardStateChange,
 };
 export default CommonWebOS;

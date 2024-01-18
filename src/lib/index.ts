@@ -1,17 +1,16 @@
 import { EventList, IUtilNative, ListenerEvent } from "./type";
 import { PLATFORM_NAME } from "./utils/common";
 import { getPlatformName } from "./utils/utils";
-import CommonWebOS, { addEventCursorStateChange } from "./webos/common.webos";
+import CommonWebOS from "./webos/common.webos";
 import EventEmitter from "eventemitter3";
 
 export const eventEmitterNative = new EventEmitter();
 // @ts-ignore
+
 export class UtilNative implements IUtilNative {
-  public static EventList = EventList;
   public baseInfo: any = {};
   private isLoadedData: boolean = false;
   public static _instance: any;
-  public timeoutActiveMouse: any;
   public platformName: PLATFORM_NAME = getPlatformName();
   constructor() {
     this.platformName = getPlatformName();
@@ -49,14 +48,21 @@ export class UtilNative implements IUtilNative {
   private onCursorStateChange = (callback: (data: any) => void) => {
     switch (this.platformName) {
       case PLATFORM_NAME.webOS:
-        addEventCursorStateChange(callback);
+        CommonWebOS.addEventCursorStateChange(callback);
+        break;
+      default:
+    }
+  };
+  private onKeyboardStateChange = (callback: (data: any) => void) => {
+    switch (this.platformName) {
+      case PLATFORM_NAME.webOS:
+        CommonWebOS.addEventKeyBoardStateChange(callback);
         break;
       default:
     }
   };
 
   public onEvent(event: ListenerEvent, callback: (e: any) => void) {
-    console.log('callback', callback)
     switch (event) {
       //
       case ListenerEvent.NETWORK_CHANGE:
@@ -72,6 +78,9 @@ export class UtilNative implements IUtilNative {
       case ListenerEvent.MOUSE_ENABLE:
         this.onCursorStateChange(callback);
         break;
+      case ListenerEvent.STATUS_KEYBOARD_CHANGE:
+        this.onKeyboardStateChange(callback);
+        break;
       default:
         break;
     }
@@ -81,7 +90,7 @@ export class UtilNative implements IUtilNative {
       case PLATFORM_NAME.webOS:
         switch (event) {
           case ListenerEvent.MOUSE_ENABLE:
-            CommonWebOS.offEventCursorStateChange(callback)
+            CommonWebOS.offEventCursorStateChange(callback);
             break;
           default:
             break;
@@ -96,12 +105,10 @@ export class UtilNative implements IUtilNative {
     switch (this.platformName) {
       case PLATFORM_NAME.webOS:
         const data = await CommonWebOS.getCommonPlatformData();
-        console.log("abc", data);
         this.baseInfo = data;
         break;
       default:
     }
-    console.log("success");
     eventEmitterNative.emit(EventList.LOADED_INFO, { isSuccess: true });
   }
 }

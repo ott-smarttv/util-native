@@ -2,7 +2,6 @@ import { PLATFORM_NAME } from "./common";
 
 export const userAgentContains = (key: PLATFORM_NAME) => {
   const userAgent = window.navigator.userAgent || "";
-  console.log("🚀 ~ userAgent:", userAgent.toLowerCase(), key.toLowerCase(), userAgent.toLowerCase().includes(key.toLowerCase()));
   return userAgent.toLowerCase().includes(key.toLowerCase());
 };
 export const getDeviceName = (
