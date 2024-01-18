@@ -1,7 +1,7 @@
 import { ConnectionT, DeviceInfoT, ListenerEvent, ScreenT } from "../type";
 import { PLATFORM_NAME } from "../utils/common";
 import { getDeviceName } from "../utils/utils";
-import { API_WEBOS } from "./constant.webos";
+import { API_WEBOS, CURSOR_STATE } from "./constant.webos";
 import { DeviceWebOST, IWebOS } from "./types.webos";
 import { eventEmitterNative } from "..";
 
@@ -101,6 +101,10 @@ const getSystemSettings = async () => {
         resolve("success");
         // To-Do something
       },
+      onFailure: function (error) {
+        console.log("Failed", error);
+        resolve("Doned");
+      },
     });
   });
 
@@ -115,6 +119,10 @@ const getSystemSettings = async () => {
         data["caption"] = inResponse;
         resolve("success");
       },
+      onFailure: function (error) {
+        console.log("Failed", error);
+        resolve("Doned");
+      },
     });
   });
 
@@ -127,6 +135,10 @@ const getSystemSettings = async () => {
       onSuccess: function (inResponse) {
         data["localeInfo"] = inResponse;
         resolve("success");
+      },
+      onFailure: function (error) {
+        console.log("Failed", error);
+        resolve("Doned");
       },
     });
   });
@@ -149,7 +161,7 @@ const getConnectionStatus = async () => {
         if (isSucceeded) {
           console.log("connectionStatus getConnectionStatus: ", inResponse);
           // To-Do something
-          const connectionStatus = mapDataConnectionStatus(inResponse);
+          connectionStatus = mapDataConnectionStatus(inResponse);
           eventEmitterNative.emit(
             ListenerEvent.NETWORK_CHANGE,
             connectionStatus
@@ -158,7 +170,6 @@ const getConnectionStatus = async () => {
         } else {
           console.log("Failed to get TV device information");
           // To-Do something
-          return undefined;
         }
       },
     });
@@ -188,8 +199,41 @@ const mapDataConnectionStatus = (connection: any) => {
   };
 };
 
+export const addEventCursorStateChange = (callback: (data: any) => void) => {
+  document.addEventListener("keydown", (e) => {
+    if (e.keyCode === CURSOR_STATE.CURSOR_SHOW) {
+      callback({ isCursorShow: true });
+    }
+    if (e.keyCode === CURSOR_STATE.CURSOR_HIDE) {
+      callback({ isCursorShow: false });
+    }
+  });
+  document.addEventListener("cursorStateChange", (e: any) => {
+    console.log("🚀 ~ UtilNative ~ document.cursorStateChange ~ e:", e, callback);
+    callback({ isCursorShow: e.detail.visibility });
+  });
+  document.addEventListener("focus", (e) => {
+    console.log("🚀 ~ UtilNative ~ document.focus ~ e:", e);
+    callback({ isCursorShow: true });
+  });
+  document.addEventListener("blur", (e) => {
+    console.log("🚀 ~ UtilNative ~ document.blur ~ e:", e);
+    callback({ isCursorShow: true });
+  });
+};
+export const offEventCursorStateChange = (callback: (data: any) => void) => {
+  document.removeEventListener("keydown", callback);
+  document.removeEventListener("blur", callback);
+  document.removeEventListener("focus", callback);
+  document.removeEventListener("cursorStateChange", callback);
+}
+
 const getCommonPlatformData = async () => {
   const connectionStatus: ConnectionT = await CommonWebOS.getConnectionStatus();
+  console.log(
+    "🚀 ~ getCommonPlatformData ~ connectionStatus:",
+    connectionStatus
+  );
 
   const deviceInfo: any = await CommonWebOS.getDeviceInfo();
   console.log("🚀 ~ getCommonPlatformData ~ deviceInfo:", deviceInfo);
@@ -253,5 +297,7 @@ const CommonWebOS = {
   getSystemTime,
   getCommonPlatformData,
   getUid,
+  addEventCursorStateChange,
+  offEventCursorStateChange
 };
 export default CommonWebOS;

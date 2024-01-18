@@ -25,3 +25,7 @@ export const API_WEBOS = {
     }
   }
 }
+export enum CURSOR_STATE {
+  CURSOR_SHOW = 1536,
+  CURSOR_HIDE = 1537,
+}

@@ -31,4 +31,6 @@ export const EventList = {
 };
 export enum ListenerEvent {
   NETWORK_CHANGE = 'NETWORK_CHANGE',
+  MOUSE_ENABLE = 'MOUSE_ENABLE',
+  STATUS_KEYBOARD_CHANGE = 'STATUS_KEYBOARD_CHANGE',
 }
