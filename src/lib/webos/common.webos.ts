@@ -1,4 +1,12 @@
-import { ConnectionT, DeviceInfoT, ListenerEvent, ScreenT } from "../type";
+import {
+  BaseInfoT,
+  ConnectionT,
+  DeviceInfoT,
+  ListenerEvent,
+  NetworkStatus,
+  NetworkType,
+  ScreenT,
+} from "../type";
 import { PLATFORM_NAME } from "../utils/common";
 import { getDeviceName } from "../utils/utils";
 import { API_WEBOS, CURSOR_STATE } from "./constant.webos";
@@ -58,7 +66,7 @@ const getUid = async () => {
       },
       onFailure: function (error) {
         console.log("Failed to get UID:", error);
-        resolve('Failed');
+        resolve("Failed");
       },
     });
   });
@@ -66,14 +74,14 @@ const getUid = async () => {
 };
 
 const getSystemTime = async () => {
-  let systemTime: any = null
+  let systemTime: any = null;
   new Promise((resolve, reject) => {
     window.webOS.service.request(API_WEBOS.SYSTEM_TIME.base, {
       method: API_WEBOS.SYSTEM_TIME.methods.getSystemTime,
       parameters: { subscribe: false },
       onComplete: function (inResponse) {
         var isSucceeded = inResponse.returnValue;
-  
+
         if (isSucceeded) {
           // To-Do something
           systemTime = inResponse;
@@ -81,12 +89,12 @@ const getSystemTime = async () => {
         } else {
           console.log("Failed to get TV device information");
           // To-Do something
-          resolve("Failed")
+          resolve("Failed");
         }
       },
     });
-  })
-  return systemTime
+  });
+  return systemTime;
 };
 
 const getSystemSettings = async () => {
@@ -156,12 +164,12 @@ const getConnectionStatus = async () => {
       method: API_WEBOS.CONNECTION_MANAGER.methods.getStatus,
       parameters: { subscribe: true },
       onComplete: function (inResponse) {
-
         var isSucceeded = inResponse.returnValue;
 
         if (isSucceeded) {
           // To-Do something
           connectionStatus = mapDataConnectionStatus(inResponse);
+          console.log("🚀 ~ awaitnewPromise ~ inResponse:", inResponse);
           eventEmitterNative.emit(
             ListenerEvent.NETWORK_CHANGE,
             connectionStatus
@@ -188,26 +196,28 @@ const mapDataConnectionStatus = (connection: any) => {
   if (networkConnection) {
     return {
       type: networkConnection[0],
-      onInternet: networkConnection[1]?.onInternet === "yes",
       displayName: networkConnection[1]?.displayName,
       ipAddress: networkConnection[1]?.ipAddress,
       state: networkConnection[1]?.state,
+      ipMac: networkConnection[1]?.ipMac,
     } as ConnectionT;
   }
   return {
-    state: "disconnected",
+    state: NetworkStatus.DISCONNECTED,
+    ipAddress: "0.0.0.0",
+    type: NetworkType.UNIDENTIFIED,
   };
 };
 
 export const addEventCursorStateChange = (callback: (data: any) => void) => {
-  document.addEventListener("keydown", (e) => {
-    if (e.keyCode === CURSOR_STATE.CURSOR_SHOW) {
-      callback({ isCursorShow: true });
-    }
-    if (e.keyCode === CURSOR_STATE.CURSOR_HIDE) {
-      callback({ isCursorShow: false });
-    }
-  });
+  // document.addEventListener("keydown", (e) => {
+  //   if (e.keyCode === CURSOR_STATE.CURSOR_SHOW) {
+  //     callback({ isCursorShow: true });
+  //   }
+  //   if (e.keyCode === CURSOR_STATE.CURSOR_HIDE) {
+  //     callback({ isCursorShow: false });
+  //   }
+  // });
   document.addEventListener("cursorStateChange", (e: any) => {
     callback({ isCursorShow: e.detail.visibility });
   });
@@ -219,16 +229,16 @@ export const addEventCursorStateChange = (callback: (data: any) => void) => {
   });
 };
 export const offEventCursorStateChange = (callback: (data: any) => void) => {
-  document.removeEventListener("keydown", callback);
+  // document.removeEventListener("keydown", callback);
   document.removeEventListener("blur", callback);
   document.removeEventListener("focus", callback);
   document.removeEventListener("cursorStateChange", callback);
-}
+};
 export const addEventKeyBoardStateChange = (callback: (data: any) => void) => {
   document.addEventListener("keyboardStateChange", (e: any) => {
     callback({ isKeyboardShow: e.detail.visibility });
   });
-}
+};
 
 const getCommonPlatformData = async () => {
   const connectionStatus: ConnectionT = await CommonWebOS.getConnectionStatus();
@@ -240,8 +250,6 @@ const getCommonPlatformData = async () => {
 
   const uid = await CommonWebOS.getUid();
 
-  let ipAddress = connectionStatus.ipAddress;
-
   // device info
   const rawDeviceInfo: DeviceInfoT = {
     brandName: deviceInfo.brandName,
@@ -251,7 +259,6 @@ const getCommonPlatformData = async () => {
       deviceInfo.modelName
     ),
     appId: appId,
-    ipAddress: ipAddress,
     manufacturer: deviceInfo.manufacturer,
     modelName: deviceInfo.modelName,
     version: deviceInfo.version,
@@ -264,17 +271,18 @@ const getCommonPlatformData = async () => {
     height: deviceInfo.screenHeight,
   };
 
-  // system info
-  const rawSystemInfo = {
-    country: systemInfo.country,
-    timezone: systemInfo.timezone,
-  };
   return {
     deviceInfo: rawDeviceInfo,
     screen,
-    systemInfo: rawSystemInfo,
+    locale: systemInfo.country,
     connectionStatus,
-  };
+    keyboard: {
+      isKeyboardShow: window.webOS.keyboard.isShowing(),
+    },
+    cursor: {
+      isCursorShow: false,
+    },
+  } as BaseInfoT;
 };
 const CommonWebOS = {
   getDeviceInfo,

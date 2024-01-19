@@ -5,7 +5,6 @@ export interface DeviceInfoT {
   manufacturer?: string;
   modelName?: string;
   version: string;
-  ipAddress?: string;
   uid?: string;
 }
 export interface ScreenT {
@@ -13,12 +12,11 @@ export interface ScreenT {
   height: number;
 }
 export interface ConnectionT {
-  state: 'connected' | 'disconnected';
-  type: 'wifi' | 'wired' | undefined;
-  ssid?: string;
+  state?: NetworkStatus;
+  type?: NetworkType;
   displayName?: string;
   ipAddress?: string;
-  onInternet?: boolean;
+  ipMac?: string;
 }
 export interface IUtilNative {
   getInstance?: () => IUtilNative;
@@ -33,4 +31,25 @@ export enum ListenerEvent {
   NETWORK_CHANGE = 'NETWORK_CHANGE',
   MOUSE_ENABLE = 'MOUSE_ENABLE',
   STATUS_KEYBOARD_CHANGE = 'STATUS_KEYBOARD_CHANGE',
+}
+export enum NetworkStatus {
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+}
+export enum NetworkType {
+  WIFI= 'wifi',
+  ETHERNET = 'ethernet',
+  UNIDENTIFIED = 'Unidentified'
+}
+export type BaseInfoT = {
+  deviceInfo?: DeviceInfoT;
+  screen?: ScreenT;
+  connectionStatus?: ConnectionT;
+  keyboard?: {
+    isKeyboardShow: boolean;
+  };
+  locale?: string;
+  cursor?: {
+    isCursorShow: boolean;
+  }
 }

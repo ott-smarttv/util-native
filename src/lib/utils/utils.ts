@@ -42,3 +42,36 @@ export const getPlatformName = () => {
   // fallback
   return PLATFORM_NAME.browser;
 };
+const request = new XMLHttpRequest();
+
+const checkOnlineStatus = (stopAfterMs = 500) => {
+  let stopApiCallTimer: any;
+
+  try {
+    if (stopAfterMs) {
+      stopApiCallTimer = setTimeout(() => {
+        request.abort();
+        // setNetworkConnection(false);
+      }, stopAfterMs);
+    }
+
+    // Ping Google :)
+    request.open('GET', 'http://connectivitycheck.gstatic.com/generate_204', true);
+
+    request.onload = () => {
+      if (stopApiCallTimer) clearTimeout(stopApiCallTimer);
+      // setNetworkConnection(request?.status >= 200 && request?.status < 300);
+    };
+
+    request.onerror = () => {
+      if (stopApiCallTimer) clearTimeout(stopApiCallTimer);
+      // setNetworkConnection(false);
+    };
+
+    request.send();
+  } catch (e) {
+    if (stopApiCallTimer) clearTimeout(stopApiCallTimer);
+    request.abort();
+    // setNetworkConnection(false);
+  }
+};
