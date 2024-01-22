@@ -10,7 +10,7 @@ import {
 import { PLATFORM_NAME } from "../utils/common";
 import { getDeviceName } from "../utils/utils";
 import { API_WEBOS, CURSOR_STATE } from "./constant.webos";
-import { DeviceWebOST, IWebOS } from "./types.webos";
+import { DeviceWebOST, IWebOS } from "./type.webos";
 import { eventEmitterNative } from "..";
 
 declare global {
